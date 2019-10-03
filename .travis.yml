@@ -6,7 +6,7 @@ install:
     - pip install -r requirements.txt
 
 script:
-    - python -m pytest --cov
+    - python -m pytest tests/test_tokenizer.py --cov --cov-report term
 
 after_script:
     - codecov
