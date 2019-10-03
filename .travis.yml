@@ -8,5 +8,5 @@ install:
 script:
     - python -m pytest tests/test_tokenizer.py --cov --cov-report term
 
-after_script:
+after_success:
     - codecov
