@@ -1,0 +1,8 @@
+1,0	1,6	RESERVED	'select'
+1,6	1,7	SPACE   	' '
+1,7	1,8	ASTERISK	'*'
+1,8	1,9	SPACE   	' '
+1,9	1,13	RESERVED	'from'
+1,13	1,14	SPACE   	' '
+1,14	1,17	ID      	'lol'
+1,17	1,18	SEMI    	';'
