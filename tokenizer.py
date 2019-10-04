@@ -1,4 +1,4 @@
-from typing import NamedTuple, List, Tuple, Iterator, Optional, Pattern, Match, Callable
+from typing import NamedTuple, List, Tuple, Iterator, Optional, Pattern, Callable
 import re
 
 
