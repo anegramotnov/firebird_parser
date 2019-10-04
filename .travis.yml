@@ -8,6 +8,7 @@ install:
 script:
     - flake8 .
     - pylint tokenizer.py tests/test_tokenizer.py
+    - mypy .
     - python -m pytest tests/test_tokenizer.py --cov=tokenizer --cov-report=term
 
 after_success:
