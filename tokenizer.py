@@ -4,6 +4,7 @@ import re
 
 class UnexpectedLexeme(BaseException):
     def __init__(self, msg: str):
+        super().__init__()
         self.msg = msg
 
     def __str__(self):
@@ -32,6 +33,8 @@ class Token(NamedTuple):
     name: str
     value: str
 
+    # according to following issue: https://github.com/PyCQA/pylint/issues/2688
+    # pylint: disable=no-member
     def __repr__(self):
         return '{sl},{sc}\t{el},{ec}\t{name}\t{value}'.format(
             sl=self.start_line,
@@ -41,6 +44,7 @@ class Token(NamedTuple):
             name=self.name.ljust(8),
             value=repr(self.value),
         )
+    # pylint: enable=no-member
 
 
 def get_new_lexer_state(lexer_state: LexerState, token_value: str) -> LexerState:
@@ -68,7 +72,7 @@ def get_new_lexer_state(lexer_state: LexerState, token_value: str) -> LexerState
 
 
 # from https://firebirdsql.org/refdocs/langrefupd25-reskeywords-full-reswords.html
-reserved = {
+RESERVERD_WORDS = {
     'ADD', 'ADMIN', 'ALL', 'ALTER', 'AND', 'ANY', 'AS', 'AT', 'AVG', 'BEGIN', 'BETWEEN', 'BIGINT',
     'BIT_LENGTH', 'BLOB', 'BOTH', 'BY', 'CASE', 'CAST', 'CHAR', 'CHAR_LENGTH', 'CHARACTER', 'CHARACTER_LENGTH',
     'CHECK', 'CLOSE', 'COLLATE', 'COLUMN', 'COMMIT', 'CONNECT', 'CONSTRAINT', 'COUNT', 'CREATE', 'CROSS', 'CURRENT',
@@ -88,7 +92,7 @@ reserved = {
 }
 
 # from https://firebirdsql.org/refdocs/langrefupd25-reskeywords-full-keywords.html
-keywords = {
+KEYWORDS = {
     'ABS', 'ACCENT', 'ACOS', 'ACTION', 'ACTIVE', 'AFTER', 'ALWAYS', 'ASC', 'ASCENDING', 'ASCII_CHAR', 'ASCII_VAL',
     'ASIN', 'ATAN', 'ATAN2', 'AUTO', 'AUTONOMOUS', 'BACKUP', 'BEFORE', 'BIN_AND', 'BIN_NOT', 'BIN_OR', 'BIN_SHL',
     'BIN_SHR', 'BIN_XOR', 'BLOCK', 'BREAK', 'CALLER', 'CASCADE', 'CEIL', 'CEILING', 'CHAR_TO_UUID', 'COALESCE',
@@ -108,7 +112,9 @@ keywords = {
     'UPDATING', 'UUID_TO_CHAR', 'WAIT', 'WEEK', 'WEEKDAY', 'WORK', 'WRITE', 'YEARDAY'
 }
 
-operators = [
+
+# pylint: disable=bad-whitespace
+OPERATORS = [
     ('ASTERISK',    r'\*'),
     ('COMMA',       r','),
     ('EQUAL',       r'='),
@@ -127,45 +133,49 @@ operators = [
     ('LT',          r'<'),
     ('OR',          r'\|\|'),  # TODO: catenate operator!
 ]
-
-idx = r'[a-z_][\w\$]*'  # TODO: specify identifier regexp
-space = r'[ \t]+'
-newline = r'\n'
-mlcomment = r'/\*(.|\n)*?\*/'
-slcomment = r'--[^\n]*\n'
-
-string = r"('|\")(.|\n)*?('|\")"  # TODO: escape sequence
+# pylint: enable=bad-whitespace
 
 
-float_literal = r'\d+\.\d+'
-integer_literal = r'\d+'
+IDX = r'[a-z_][\w\$]*'  # TODO: specify identifier regexp
+SPACE = r'[ \t]+'
+NEWLINE = r'\n'
+MLCOMMENT = r'/\*(.|\n)*?\*/'
+SLCOMMENT = r'--[^\n]*\n'
+
+STRING = r"('|\")(.|\n)*?('|\")"  # TODO: escape sequence
+
+
+FLOAT_LITERAL = r'\d+\.\d+'
+INTEGER_LITERAL = r'\d+'
 
 
 def id_callback(token: Token) -> Token:
-    if token.value.upper() in reserved:
+    if token.value.upper() in RESERVERD_WORDS:
         token = token._replace(name='RESERVED')
-    elif token.value.upper() in keywords:
+    elif token.value.upper() in KEYWORDS:  # pylint: disable=undefined-loop-variable
         token = token._replace(name='KEYWORD')
     return token
 
 
-lexer_rules = \
-    [LexerRule('SLCOMMENT', re.compile(slcomment))] + \
-    [LexerRule('MLCOMMENT', re.compile(mlcomment))] + \
-    [LexerRule(op, re.compile(regex)) for op, regex in operators] + \
-    [LexerRule('ID', re.compile(idx, re.IGNORECASE), id_callback)] + \
-    [LexerRule('FLOAT', re.compile(float_literal))] + \
-    [LexerRule('INT', re.compile(integer_literal))] + \
-    [LexerRule('STRING', re.compile(string))] + \
-    [LexerRule('SPACE', re.compile(space))] + \
-    [LexerRule('NEWLINE', re.compile(newline))]
+LEXER_RULES = \
+    [LexerRule('SLCOMMENT', re.compile(SLCOMMENT))] + \
+    [LexerRule('MLCOMMENT', re.compile(MLCOMMENT))] + \
+    [LexerRule(op, re.compile(regex)) for op, regex in OPERATORS] + \
+    [LexerRule('ID', re.compile(IDX, re.IGNORECASE), id_callback)] + \
+    [LexerRule('FLOAT', re.compile(FLOAT_LITERAL))] + \
+    [LexerRule('INT', re.compile(INTEGER_LITERAL))] + \
+    [LexerRule('STRING', re.compile(STRING))] + \
+    [LexerRule('SPACE', re.compile(SPACE))] + \
+    [LexerRule('NEWLINE', re.compile(NEWLINE))]
 
 
 def get_next_token(state: LexerState, source: str, rules: List[LexerRule]) -> Tuple[LexerState, Optional[Token]]:
     for name, regex, callback in rules:
+        # pylint: disable=invalid-name
         m = regex.match(source)
         if m:
             token_value = m.group()
+            # pylint: enable=invalid-name
             # TODO: move to tokenize?
             new_state = get_new_lexer_state(state, token_value)
             token = Token(
@@ -196,7 +206,7 @@ def tokenize(source: str) -> Iterator[Token]:
 
         source_tail = source[state.position:]
         try:
-            state, next_token = get_next_token(state, source_tail, lexer_rules)
+            state, next_token = get_next_token(state, source_tail, LEXER_RULES)
         except UnexpectedLexeme as ex:
             print(ex)
             break

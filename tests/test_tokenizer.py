@@ -1,34 +1,35 @@
-import pytest
 from pathlib import Path
 from typing import List, Iterator, Tuple
+
+import pytest
 
 from tokenizer import tokenize
 
 TEST_DIRECTORY = Path(__file__)
 
-SOURCES_DIRECTORY = TEST_DIRECTORY.parent.joinpath('sources')
-TOKENIZER_DIRECTORY = TEST_DIRECTORY.parent.joinpath('tokens')
+SOURCES_DIRECTORY = TEST_DIRECTORY.parent.joinpath("sources")
+TOKENIZER_DIRECTORY = TEST_DIRECTORY.parent.joinpath("tokens")
 
 
 def get_all_sql_files() -> List[Path]:
-    sources = Path(__file__).parent.joinpath('cases').glob('*.sql')
+    sources = Path(__file__).parent.joinpath("cases").glob("*.sql")
     return sources
 
 
 def get_token_files() -> Iterator[Path]:
     token_files = TOKENIZER_DIRECTORY.iterdir()
     for token_file in token_files:
-        if not token_file.name.startswith('skip'):
+        if not token_file.name.startswith("skip"):
             yield token_file
 
 
 def get_file_content(file: Path) -> str:
-    with file.open(encoding='utf-8') as f:
-        return f.read()
+    with file.open(encoding="utf-8") as stream:
+        return stream.read()
 
 
 def get_source_by_name(source_name: str) -> str:
-    source_file = SOURCES_DIRECTORY.joinpath(f'{source_name}.sql')
+    source_file = SOURCES_DIRECTORY.joinpath(f"{source_name}.sql")
     return get_file_content(source_file)
 
 
@@ -36,10 +37,10 @@ def get_case_pairs() -> List[Tuple[str, Iterator[str]]]:
     token_files = get_token_files()
     pairs = []
     for token_file in token_files:
-        source_name = token_file.name.split('.')[0]
+        source_name = token_file.name.split(".")[0]
         source = get_source_by_name(source_name=source_name)
         etalon_token_dump = get_file_content(file=token_file)
-        etalon_tokens = iter(etalon_token_dump.strip().split('\n'))
+        etalon_tokens = iter(etalon_token_dump.strip().split("\n"))
         pairs.append((source, etalon_tokens))
     return pairs
 
